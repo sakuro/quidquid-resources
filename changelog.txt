@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: Unreleased
+  Changes:
+    - Resources appear in Quidquid's default search unless a new per-player setting turns them off
+  Modding:
+    - Declared against Quidquid's extension contract version 4
+---------------------------------------------------------------------------------------------------
 Version: 0.5.0
 Date: 2026-09-29
   Features:

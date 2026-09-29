@@ -3,8 +3,8 @@
 [![Downloads](https://img.shields.io/badge/dynamic/json.svg?label=Downloads&url=https%3A%2F%2Fmods.factorio.com%2Fapi%2Fmods%2Fquidquid-resources&query=%24.downloads_count)](https://mods.factorio.com/mod/quidquid-resources)
 
 Adds resource-patch search to the [Quidquid](https://mods.factorio.com/mod/quidquid)
-palette. It moved out of Quidquid in 0.10.0. Type `resource ` or `R ` to search
-resource patches.
+palette. It moved out of Quidquid in 0.10.0. Type `resource ` or `R ` (uppercase,
+since lowercase `r` is taken by recipes) to search resource patches.
 
 Search for resource patches your force has charted.
 
@@ -13,9 +13,6 @@ Search for resource patches your force has charted.
 | Left click | Open in remote view |
 | `Ctrl/Cmd` + left click | Pin the patch |
 | `Alt` + left click | Open in Factoriopedia |
-
-Resources are left out of the unlocked search; `resource ` or `R ` reaches
-them — uppercase, since lowercase `r` is already the recipe prefix.
 
 A patch is every chunk holding a resource whose tiles touch the same
 resource's tiles in a neighbouring chunk, diagonals included. Resources
