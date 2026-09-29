@@ -312,7 +312,7 @@ describe("ResourceLogic", function()
       -- a literal "nil" on the second line. This is also the only remaining coverage
       -- of the surface-index fallback -- there used to be a second, near-identical
       -- test asserting it through a candidate.surface_token field, but that field had
-      -- no reader left once mark_occupied stopped rebuilding secondary_text from it,
+      -- no reader left once decorate stopped rebuilding secondary_text from it,
       -- so it (and the now-duplicate test) were dropped rather than kept as dead
       -- weight.
       local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names, {})
@@ -336,7 +336,7 @@ describe("ResourceLogic", function()
     it(
       "carries the translated occupied marker on the candidate, for the runtime source to rebuild the name with",
       function()
-        -- lib/resource_source.lua's mark_occupied only learns whether a patch is
+        -- lib/resource_source.lua's decorate only learns whether a patch is
         -- occupied after build_candidates has already run (occupancy is a runtime fact,
         -- checked by find_entities_filtered against a live surface). Carrying the
         -- translated marker on the candidate, the same way surface_token is carried, lets
@@ -365,7 +365,7 @@ describe("ResourceLogic", function()
     end)
 
     it("keeps the match inside the name portion once the marker is appended to a translated label", function()
-      -- Mirrors what mark_occupied actually does: take a real build_candidates label
+      -- Mirrors what decorate actually does: take a real build_candidates label
       -- and append the marker, then confirm search_display_ranges (unmodified by
       -- occupied_label) still lands inside the name prefix.
       local clusters = {

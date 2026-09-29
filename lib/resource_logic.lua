@@ -51,7 +51,7 @@ end
 
 --- Splices the occupied marker onto a candidate's name-line label.
 ---
---- Called by lib/resource_source.lua's mark_occupied once it has learned, at
+--- Called by lib/resource_source.lua's decorate once it has learned, at
 --- search time, that a mining drill already works this patch -- a runtime fact
 --- build_candidates cannot know when it first builds the label. Two label shapes come
 --- in, both needing the marker appended so the occupied form matches Factorio's own map
@@ -113,7 +113,7 @@ end
 --- cluster whose surface has no entry falls back to the surface index itself
 ---@param occupied_marker string|nil  the occupied marker's own translated plain string,
 --- from flib's dictionary; carried onto every candidate as `occupied_marker` for
---- lib/resource_source.lua's mark_occupied to pass to `.occupied_label` once it
+--- lib/resource_source.lua's decorate to pass to `.occupied_label` once it
 --- learns, at search time, which candidates are actually occupied
 ---@return table  candidates, richest first; see EXTENDING.md "Candidates"
 function ResourceLogic.build_candidates(

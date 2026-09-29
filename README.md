@@ -3,7 +3,7 @@
 [![Downloads](https://img.shields.io/badge/dynamic/json.svg?label=Downloads&url=https%3A%2F%2Fmods.factorio.com%2Fapi%2Fmods%2Fquidquid-resources&query=%24.downloads_count)](https://mods.factorio.com/mod/quidquid-resources)
 
 Adds resource-patch search to the [Quidquid](https://mods.factorio.com/mod/quidquid)
-palette. It was part of Quidquid until 0.10.0. Type `resource ` or `R ` to search
+palette. It moved out of Quidquid in 0.10.0. Type `resource ` or `R ` to search
 resource patches.
 
 Search for resource patches your force has charted.
