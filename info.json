@@ -1,6 +1,6 @@
 {
   "name": "quidquid-resources",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "title": "Quidquid: Resources",
   "author": "sakuro",
   "description": "Adds resource-patch search to the Quidquid palette, with remote view, Factoriopedia and pin actions.",
