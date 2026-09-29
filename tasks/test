@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run busted unit tests"
+set -euo pipefail
+
+eval "$(luarocks path --bin)"
+busted

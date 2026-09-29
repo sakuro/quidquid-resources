@@ -1,0 +1,33 @@
+* text=auto export-ignore
+
+/README.md export-ignore=false
+
+/changelog.txt export-ignore=false
+/LICENSE.txt export-ignore=false
+
+/info.json export-ignore=false
+
+/locale/*/*.cfg export-ignore=false
+
+/settings.lua export-ignore=false
+/settings-updates.lua export-ignore=false
+/settings-final-fixes.lua export-ignore=false
+/data.lua export-ignore=false
+/data-updates.lua export-ignore=false
+/data-final-fixes.lua export-ignore=false
+/control.lua export-ignore=false
+*/**/*.lua export-ignore=false
+
+/migrations/*.json export-ignore=false
+
+/thumbnail.png export-ignore=false binary
+*/**/*.png export-ignore=false binary
+
+*/**/*.ogg export-ignore=false binary
+
+*/ export-ignore=false
+.*/ export-ignore
+/spec/ export-ignore
+/tasks/ export-ignore
+/tools/ export-ignore
+/doc/ export-ignore

@@ -1,0 +1,4 @@
+-- Runs once before any spec is loaded (busted `helper` option; see .busted).
+-- Use it for setup that must be in place before the code under test is first
+-- required -- e.g. shared stubs for Factorio globals. Keep every statement
+-- idempotent so an in-process re-run stays safe. No-op by default.

@@ -1,0 +1,37 @@
+amends "package://github.com/jdx/hk/releases/download/v2.2.0/hk@2.2.0#/Config.pkl"
+
+import "package://github.com/jdx/hk/releases/download/v2.2.0/hk@2.2.0#/Builtins.pkl"
+import "package://github.com/sakuro/git-hooks/releases/download/v0.3.0/git-hooks@0.3.0#/Steps.pkl" as GitHooks
+
+hooks {
+  ["commit-msg"] {
+    steps {
+      ["emoji-enforced"] = GitHooks.emoji_enforced
+    }
+  }
+  ["prepare-commit-msg"] {
+    steps {
+      ["merge-prefix"] = GitHooks.merge_prefix
+    }
+  }
+  ["pre-commit"] {
+    steps {
+      ["gitleaks"] = (Builtins.gitleaks) { scan = "staged" }
+      ["no-commit-to-branch"] = Builtins.no_commit_to_branch
+      ["stylua"] {
+        glob = "**/*.lua"
+        check = "stylua --check {{files}} || { echo 'Lua formatting check failed. Run `mise run format`, then stage the changes and commit again.' >&2; exit 1; }"
+      }
+      ["luacheck"] {
+        glob = "**/*.lua"
+        check = "eval \"$(luarocks path --bin)\" && luacheck {{files}}"
+      }
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["case-conflict"] = Builtins.check_case_conflict
+      ["newlines"] = Builtins.newlines
+    }
+  }
+}

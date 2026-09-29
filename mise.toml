@@ -1,0 +1,36 @@
+[tools]
+gh = "2.101.0"
+gitleaks = "8.30"
+jq = "1.8.2"
+hk = "2.2.0"
+actionlint = "1.7.12"
+shellcheck = "0.11.0"
+stylua = "2.5.2"
+lua = "5.2" # Factorio's Lua version; never bump (see .github/renovate.json)
+"github:sakuro/factorix" = "0.24.0"
+
+[hooks]
+# hk install: skipped in CI (GitHub Actions sets CI); hk falls back to script shims on Git < 2.54.
+# luarocks installs: versions bumped by Renovate (see .github/renovate.json). The guards skip these when
+# luarocks is unavailable — release workflows and lint.yml's format-check job set MISE_DISABLE_TOOLS=lua.
+# luacheck: needed by `mise run lint` and the luacheck pre-commit hook, including in CI.
+# busted: needed by `mise run test`, including in CI.
+postinstall = [
+  'test -n "$CI" || hk install',
+  '! luarocks --version >/dev/null 2>&1 || luarocks install --local luacheck 1.2.0',
+  '! luarocks --version >/dev/null 2>&1 || luarocks install --local busted 2.3.0',
+]
+
+[settings]
+minimum_release_age = "3d"
+
+[task_config]
+includes = ["tasks"]
+
+[env]
+# Make `hk install` generate hooks that run via `mise x`, so mise-managed tools
+# (gitleaks, hk) resolve without mise shell activation — e.g. from GUI git clients.
+HK_MISE = "1"
+MOD_LICENSE = "default_mit"
+MOD_CATEGORY = "no-category"
+MOD_TAGS = ""

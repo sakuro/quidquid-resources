@@ -1,0 +1,26 @@
+name: Spec
+
+# Part of the optional test lane: a MOD without `.busted` does not have this file.
+# workflow_dispatch: see lint.yml.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  spec:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+    - name: Install build dependencies for Lua
+      run: sudo apt-get update && sudo apt-get install -y libreadline-dev
+
+    - name: Setup mise
+      uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+
+    - name: Run tests
+      run: mise run test

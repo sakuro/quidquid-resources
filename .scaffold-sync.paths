@@ -1,0 +1,37 @@
+# Shared-infrastructure paths a derived MOD keeps in sync with factorio-mod-scaffold.
+# One literal path (or directory) per line. Consumed by merge.sh and by
+# .github/workflows/scaffold-drift.yml's cheap pre-check.
+
+.github/workflows/lint.yml
+.github/workflows/spec.yml
+.github/workflows/release-preparation.yml
+.github/workflows/release-publish.yml
+.github/workflows/release-validation.yml
+.github/workflows/scaffold-drift.yml
+.github/renovate.json
+hk.pkl
+stylua.toml
+.luacheckrc
+.luarc.json
+.gitattributes
+.gitignore
+mise.toml
+AGENTS.md
+CONTRIBUTING.md
+tasks/build
+tasks/clean
+tasks/install
+tasks/test
+tasks/format
+tasks/format-check
+tasks/lint
+tasks/doc-check
+tasks/release/github
+tasks/release/portal
+.busted
+spec/helper.lua
+tools/doc_check.lua
+tools/doc_check_test.sh
+tools/doc_check_fixtures
+.claude/skills/resolve-scaffold-drift
+.scaffold-sync.paths
