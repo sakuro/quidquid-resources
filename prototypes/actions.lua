@@ -1,5 +1,5 @@
 local function action(name, fields)
-  fields.contract_version = 3
+  fields.contract_version = 4
   fields.types = { "resource" }
   return { type = "mod-data", name = "quidquid-resources-" .. name, data_type = "quidquid.action", data = fields }
 end
