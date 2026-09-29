@@ -32,5 +32,5 @@ includes = ["tasks"]
 # (gitleaks, hk) resolve without mise shell activation — e.g. from GUI git clients.
 HK_MISE = "1"
 MOD_LICENSE = "default_mit"
-MOD_CATEGORY = "no-category"
+MOD_CATEGORY = "utilities"
 MOD_TAGS = ""
