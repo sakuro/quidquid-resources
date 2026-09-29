@@ -1,11 +1,13 @@
 {
   "name": "quidquid-resources",
   "version": "0.0.1",
-  "title": "Quidquid Resources",
+  "title": "Quidquid: Resources",
   "author": "sakuro",
-  "description": "Quidquid Resources",
+  "description": "Adds resource-patch search to the Quidquid palette, with remote view, Factoriopedia and pin actions.",
   "factorio_version": "2.1",
   "dependencies": [
-    "base >= 2.1"
+    "base >= 2.1",
+    "quidquid >= 0.10.0",
+    "flib"
   ]
 }
