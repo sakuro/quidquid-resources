@@ -341,7 +341,6 @@ local function search(query, player_index)
   return ResourceLogic.build_candidates(
     query,
     clusters,
-    player.locale,
     translated_names,
     collect_localised_names(),
     surface_tokens,
