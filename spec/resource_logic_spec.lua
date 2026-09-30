@@ -31,7 +31,7 @@ package.preload["__quidquid__.lib.api"] = function()
   end
 
   return {
-    matcher = function(query, _locale)
+    matcher = function(query)
       return setmetatable({ query = query }, Matcher)
     end,
     -- The real formatting is Quidquid's own to spec ("9.0k", "4.2M", ...); this mock's
@@ -108,7 +108,7 @@ describe("ResourceLogic", function()
     }
 
     it("matches on the translated name", function()
-      local candidates = ResourceLogic.build_candidates("iron", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("iron", clusters, translated, localised_names)
 
       assert.are.equal(2, #candidates)
       assert.are.equal("resource", candidates[1].type)
@@ -118,21 +118,21 @@ describe("ResourceLogic", function()
     end)
 
     it("matches on the prototype name", function()
-      local candidates = ResourceLogic.build_candidates("copper-ore", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper-ore", clusters, translated, localised_names)
 
       assert.are.equal(1, #candidates)
       assert.are.equal("copper-ore:0,0", candidates[1].id)
     end)
 
     it("orders same-named clusters by descending amount", function()
-      local candidates = ResourceLogic.build_candidates("iron", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("iron", clusters, translated, localised_names)
 
       assert.are.equal("iron-ore:9,9", candidates[1].id)
       assert.are.equal("iron-ore:0,0", candidates[2].id)
     end)
 
     it("puts the richest chunk's anchor on a single-chunk cluster", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       assert.are.same({ x = -5, y = -5 }, candidates[1].position)
     end)
@@ -145,7 +145,7 @@ describe("ResourceLogic", function()
         }),
       }
 
-      local candidates = ResourceLogic.build_candidates("iron", multi_chunk_clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("iron", multi_chunk_clusters, translated, localised_names)
 
       -- The richer chunk ("9,0", amount 5000) anchors at (320, 10), an actual entity
       -- position. The bounding box centres at (170, 10) -- off the ore entirely, which
@@ -165,7 +165,7 @@ describe("ResourceLogic", function()
         }),
       }
 
-      local candidates = ResourceLogic.build_candidates("iron", parity_clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("iron", parity_clusters, translated, localised_names)
 
       assert.are.same({ x = 9.5, y = 0.5 }, candidates[1].position)
       assert.are_not.equal(5.0, candidates[1].position.x)
@@ -179,19 +179,19 @@ describe("ResourceLogic", function()
         }),
       }
 
-      local candidates = ResourceLogic.build_candidates("iron", tied_clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("iron", tied_clusters, translated, localised_names)
 
       assert.are.same({ x = 20, y = 10 }, candidates[1].position)
     end)
 
     it("names the resource's entity sprite as the icon", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       assert.are.equal("entity/copper-ore", candidates[1].icon)
     end)
 
     it("labels a candidate with the translated name and the amount when a translation is available", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       -- The copper-ore fixture's amount is 100; the mock's number_format.suffixed
       -- renders it as "<100>".
@@ -199,27 +199,27 @@ describe("ResourceLogic", function()
     end)
 
     it("falls back to the localised name, with the amount appended, when untranslated", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", {}, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, {}, localised_names)
 
       assert.are.same({ "", { "entity-name.copper-ore" }, " ", "<100>" }, candidates[1].label)
     end)
 
     it("sets both label and search_display_name to the same plain string when translated", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       assert.are.equal("Copper ore <100>", candidates[1].label)
       assert.are.equal("Copper ore <100>", candidates[1].search_display_name)
     end)
 
     it("leaves search_display_name nil when untranslated, even though label still carries the amount", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", {}, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, {}, localised_names)
 
       assert.is_nil(candidates[1].search_display_name)
       assert.are.same({ "", { "entity-name.copper-ore" }, " ", "<100>" }, candidates[1].label)
     end)
 
     it("keeps search_display_ranges inside the name, not spilling into the appended amount", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       -- "Copper ore" is 10 bytes; the amount is appended after it, so every matched
       -- range must stay within those first 10 bytes for the highlight to still land
@@ -252,21 +252,19 @@ describe("ResourceLogic", function()
         }),
       }
 
-      local candidates =
-        ResourceLogic.build_candidates("iron", unformatted_order_clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("iron", unformatted_order_clusters, translated, localised_names)
 
       assert.are.equal("iron-ore:large", candidates[1].id)
       assert.are.equal("iron-ore:small", candidates[2].id)
     end)
 
     it("returns nothing when no cluster matches", function()
-      assert.are.same({}, ResourceLogic.build_candidates("uranium", clusters, "en", translated, localised_names))
+      assert.are.same({}, ResourceLogic.build_candidates("uranium", clusters, translated, localised_names))
     end)
 
     it("puts the surface token and the floored position on secondary_text", function()
       local surface_tokens = { [1] = "[planet=nauvis]" }
-      local candidates =
-        ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names, surface_tokens)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names, surface_tokens)
 
       -- The copper-ore fixture's anchor is { x = -5, y = -5 }, already whole numbers;
       -- see the floored-position case below for a fixture that actually exercises
@@ -283,15 +281,14 @@ describe("ResourceLogic", function()
       local surface_tokens = { [1] = "[planet=nauvis]" }
 
       local candidates =
-        ResourceLogic.build_candidates("iron", fractional_clusters, "en", translated, localised_names, surface_tokens)
+        ResourceLogic.build_candidates("iron", fractional_clusters, translated, localised_names, surface_tokens)
 
       assert.are.equal("[planet=nauvis] (-138, 9)", candidates[1].secondary_text)
     end)
 
     it("does not set search_internal_name or search_internal_ranges on a resource candidate", function()
       local surface_tokens = { [1] = "[planet=nauvis]" }
-      local candidates =
-        ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names, surface_tokens)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names, surface_tokens)
 
       assert.is_nil(candidates[1].search_internal_name)
       assert.is_nil(candidates[1].search_internal_ranges)
@@ -300,7 +297,7 @@ describe("ResourceLogic", function()
     it("still matches on the prototype name once search_internal_name is no longer displayed", function()
       local surface_tokens = { [1] = "[planet=nauvis]" }
       local candidates =
-        ResourceLogic.build_candidates("copper-ore", clusters, "en", translated, localised_names, surface_tokens)
+        ResourceLogic.build_candidates("copper-ore", clusters, translated, localised_names, surface_tokens)
 
       assert.are.equal(1, #candidates)
       assert.are.equal("copper-ore:0,0", candidates[1].id)
@@ -315,7 +312,7 @@ describe("ResourceLogic", function()
       -- no reader left once decorate stopped rebuilding secondary_text from it,
       -- so it (and the now-duplicate test) were dropped rather than kept as dead
       -- weight.
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names, {})
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names, {})
 
       assert.are.equal("1 (-5, -5)", candidates[1].secondary_text)
     end)
@@ -326,8 +323,7 @@ describe("ResourceLogic", function()
       -- now: build_candidates itself never sets it, occupied or not -- occupancy is a
       -- runtime fact this pure module has no way to know at candidate-build time.
       local surface_tokens = { [1] = "[planet=nauvis]" }
-      local candidates =
-        ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names, surface_tokens)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names, surface_tokens)
 
       assert.are.equal("[planet=nauvis] (-5, -5)", candidates[1].secondary_text)
       assert.is_nil(candidates[1].annotation)
@@ -343,14 +339,14 @@ describe("ResourceLogic", function()
         -- that later step call ResourceLogic.occupied_label without threading the
         -- dictionary lookup back through here.
         local candidates =
-          ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names, {}, "(occupied)")
+          ResourceLogic.build_candidates("copper", clusters, translated, localised_names, {}, "(occupied)")
 
         assert.are.equal("(occupied)", candidates[1].occupied_marker)
       end
     )
 
     it("leaves occupied_marker nil when the caller passes none", function()
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       assert.is_nil(candidates[1].occupied_marker)
     end)
@@ -375,7 +371,7 @@ describe("ResourceLogic", function()
       }
       local translated = { ["copper-ore"] = "Copper ore" }
       local localised_names = { ["copper-ore"] = { "entity-name.copper-ore" } }
-      local candidates = ResourceLogic.build_candidates("copper", clusters, "en", translated, localised_names)
+      local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
       local candidate = candidates[1]
 
       candidate.label, candidate.search_display_name = ResourceLogic.occupied_label(candidate.label, "(occupied)")

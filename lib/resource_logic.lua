@@ -104,7 +104,6 @@ end
 --- the order a player sees, without bending search_score to carry it.
 ---@param query string
 ---@param clusters table  array of clusters, as lib.resource_clustering builds them
----@param locale string|nil  the player's locale, for display-name normalization
 ---@param translated_names table  resource name -> translated name, from flib's dictionary
 ---@param localised_names table  resource name -> LocalisedString, from the resource
 --- prototypes; used as the label until a translated name arrives
@@ -119,14 +118,13 @@ end
 function ResourceLogic.build_candidates(
   query,
   clusters,
-  locale,
   translated_names,
   localised_names,
   surface_tokens,
   occupied_marker
 )
   local candidates = {}
-  local matcher = api.matcher(query, locale)
+  local matcher = api.matcher(query)
   surface_tokens = surface_tokens or {}
   for _, cluster in ipairs(clusters) do
     local translated = translated_names[cluster.resource_name]
