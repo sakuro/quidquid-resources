@@ -1,7 +1,7 @@
 local ScanQueue = {}
 
 -- Below this many consumed entries, compaction is skipped even once consumed
--- reaches the remaining count -- see maybe_compact. Keeps a small queue from
+-- reaches the remaining count (see maybe_compact). Keeps a small queue from
 -- shifting its handful of entries on nearly every dequeue.
 local COMPACT_FLOOR = 32
 
@@ -19,8 +19,8 @@ end
 
 --- Creates an empty queue.
 ---
---- The result holds only numbers, strings and nested tables -- no functions or
---- metatables -- so it round-trips through `storage` across a save/load, and a
+--- The result holds only numbers, strings and nested tables, with no functions or
+--- metatables, so it round-trips through `storage` across a save/load, and a
 --- spec can build and inspect one without any Factorio runtime in scope.
 ---@return table  { entries = {}, head = 1, pending = {} }
 function ScanQueue.new()
@@ -33,7 +33,7 @@ end
 --- Triggering on that ratio, rather than a fixed number of dequeues, keeps each
 --- entry shifted O(1) times amortised: the shift this performs costs `remaining`
 --- steps, and it only runs once at least `remaining` dequeues have already happened
---- since the last one, so those dequeues pay for it -- the same accounting as a
+--- since the last one, so those dequeues pay for it. This is the same accounting as a
 --- dynamic array's doubling growth, run in reverse as the array shrinks. A fixed
 --- interval would instead re-shift a tail that is still mostly full every N dequeues,
 --- which is quadratic over the hundreds of thousands of chunks an initial scan
@@ -78,7 +78,7 @@ end
 --- Takes the next chunk waiting to be scanned, oldest first.
 ---
 --- Clears the chunk's dedup entry before returning, independently of whether or
---- when compaction happens to run -- see ScanQueue.enqueue.
+--- when compaction happens to run; see ScanQueue.enqueue.
 ---@param queue table  from ScanQueue.new
 ---@return table|nil  { surface_index, x, y } for the dequeued chunk; nil when the
 --- queue is empty

@@ -1,8 +1,8 @@
 -- Quidquid's public API cannot load under busted, and this spec tests the extension's
 -- own logic, not Quidquid's; Quidquid specs its own matcher and number formatting. The
 -- mock matcher matches by plain case-insensitive substring, the same simplification
--- quidquid-blueprints' spec uses, and returns ranges only for the field that won --
--- mirroring the real Matcher:match, which never hands back ranges for the loser.
+-- quidquid-blueprints' spec uses, and returns ranges only for the field that won, as
+-- the real Matcher:match never hands back ranges for the loser.
 package.preload["__quidquid__.lib.api"] = function()
   local Matcher = {}
   Matcher.__index = Matcher
@@ -36,7 +36,7 @@ package.preload["__quidquid__.lib.api"] = function()
     end,
     -- The real formatting is Quidquid's own to spec ("9.0k", "4.2M", ...); this mock's
     -- shape ("<9000>") is deliberately unlike it so a test asserting a numeric sort
-    -- cannot pass by accident on a string sort of the formatted text -- see "sorts by
+    -- cannot pass by accident on a string sort of the formatted text. See "sorts by
     -- the numeric amount, not the formatted amount string" below.
     number_format = {
       suffixed = function(value)
@@ -73,11 +73,9 @@ describe("ResourceLogic", function()
       assert.are.equal("[planet=nauvis] (-137, -330)", text)
     end)
 
-    -- The occupied marker moved to the name line (see .occupied_label below), so the
-    -- second line is a plain string unconditionally now -- there is no third argument
-    -- left to flip it into a LocalisedString, and no font-wrapper form to lose the
-    -- highlight for. This replaces the old "occupied is true" case above, which
-    -- asserted the marker landed here.
+    -- The occupied marker is on the name line (see .occupied_label below), so the
+    -- second line is always a plain string: no argument flips it into a
+    -- LocalisedString, and there is no font-wrapper form to lose the highlight for.
     it("never includes the occupied marker, even a stray extra argument is ignored", function()
       local text = ResourceLogic.secondary_text("[planet=nauvis]", { x = -137.5, y = -330.1 }, true)
 
@@ -88,7 +86,7 @@ describe("ResourceLogic", function()
   describe(".build_candidates", function()
     -- Each fixture cluster carries a real chunks table, not just bounds: position comes
     -- from the richest chunk's `anchor`, an actual entity position recorded by
-    -- ResourceClustering.group_chunk -- never a computed centre. See lib/resource_logic.lua
+    -- ResourceClustering.group_chunk, never a computed centre. See lib/resource_logic.lua
     -- for why a computed centre can land on a tile boundary with no ore under it.
     local clusters = {
       cluster("iron-ore:0,0", "iron-ore", 5000, { left = 0, top = 0, right = 40, bottom = 20 }, {
@@ -148,15 +146,15 @@ describe("ResourceLogic", function()
       local candidates = ResourceLogic.build_candidates("iron", multi_chunk_clusters, translated, localised_names)
 
       -- The richer chunk ("9,0", amount 5000) anchors at (320, 10), an actual entity
-      -- position. The bounding box centres at (170, 10) -- off the ore entirely, which
-      -- is exactly the bug the anchor exists to avoid.
+      -- position. The bounding box centres at (170, 10), off the ore entirely, which
+      -- is the bug the anchor exists to avoid.
       assert.are.same({ x = 320, y = 10 }, candidates[1].position)
     end)
 
     it("uses the richest chunk's recorded entity position, not a midpoint that can fall on a tile boundary", function()
       -- Entities at tile centres x = 0.5 and x = 9.5 span an odd number of tiles: their
-      -- midpoint is (0.5 + 9.5) / 2 = 5.0, a whole integer -- a tile BOUNDARY, inside no
-      -- resource entity's collision box. This is the exact defect reported in the field
+      -- midpoint is (0.5 + 9.5) / 2 = 5.0, a whole integer and so a tile BOUNDARY, inside
+      -- no resource entity's collision box. This is the defect reported in the field
       -- (see lib/resource_logic.lua's comment). group_chunk's anchor is recorded from a
       -- real entity, so it is immune to this per-axis parity coin-flip.
       local parity_clusters = {
@@ -306,21 +304,15 @@ describe("ResourceLogic", function()
     it("falls back to a usable secondary_text when the surface has no token in the map", function()
       -- surface_tokens is deliberately empty: a caller that did not describe this
       -- cluster's surface (or omitted the map entirely) must not crash or render
-      -- a literal "nil" on the second line. This is also the only remaining coverage
-      -- of the surface-index fallback -- there used to be a second, near-identical
-      -- test asserting it through a candidate.surface_token field, but that field had
-      -- no reader left once decorate stopped rebuilding secondary_text from it,
-      -- so it (and the now-duplicate test) were dropped rather than kept as dead
-      -- weight.
+      -- a literal "nil" on the second line. This is also the only coverage of the
+      -- surface-index fallback.
       local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names, {})
 
       assert.are.equal("1 (-5, -5)", candidates[1].secondary_text)
     end)
 
     it("builds a candidate with a plain-string secondary_text and no annotation", function()
-      -- The occupied marker used to be a right-end `annotation` set by the runtime
-      -- resource_source.lua, applied after build_candidates ran. That field is gone
-      -- now: build_candidates itself never sets it, occupied or not -- occupancy is a
+      -- build_candidates never sets `annotation`, occupied or not: occupancy is a
       -- runtime fact this pure module has no way to know at candidate-build time.
       local surface_tokens = { [1] = "[planet=nauvis]" }
       local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names, surface_tokens)
@@ -421,10 +413,10 @@ describe("ResourceLogic", function()
     )
 
     it("trims surrounding whitespace off the marker before splicing in its own single space", function()
-      -- gui.occupied resolved with an empty __1__ yields its fixed part on its own --
-      -- " (occupied)" in English, leading space and all. occupied_label must not just
-      -- concatenate that verbatim (which would double the space); it trims both ends
-      -- first and supplies exactly one separating space itself.
+      -- gui.occupied resolved with an empty __1__ yields its fixed part on its own:
+      -- " (occupied)" in English, leading space and all. Concatenating that verbatim
+      -- would double the space, so occupied_label trims both ends first and supplies
+      -- exactly one separating space itself.
       local label, search_display_name = ResourceLogic.occupied_label("Iron ore 4.2M", "  (occupied)  ")
 
       assert.are.equal("Iron ore 4.2M (occupied)", label)

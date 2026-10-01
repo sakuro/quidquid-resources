@@ -22,7 +22,7 @@ end
 -- resource patch with") confirms this pins the whole patch rather than one entity.
 --
 -- No label is passed, deliberately. Given surface, position and resource, the engine
--- resolves the whole patch and holds a reference to every entity in it -- confirmed in
+-- resolves the whole patch and holds a reference to every entity in it. Confirmed in
 -- game: a pin made here and one made by Factorio's own map-search pin button come back
 -- with the same targets and the same centre. It renders the name and the remaining
 -- amount from those entities, so the figure follows the patch as it is mined. Any label
