@@ -150,7 +150,7 @@ describe("ResourceClustering", function()
 
     it("anchors on the entity nearest the bounding box's centre", function()
       -- Bounding box centre is ((0.5 + 9.5) / 2, 0.5) = (5.0, 0.5), a tile boundary.
-      -- The entity at (4.5, 0.5) is 0.5 tiles from it; the ones at the ends are 4.5 --
+      -- The entity at (4.5, 0.5) is 0.5 tiles from it and the ones at the ends are 4.5,
       -- so (4.5, 0.5), a real entity position, is the anchor.
       local grouped = ResourceClustering.group_chunk({
         { name = "iron-ore", amount = 100, position = { x = 0.5, y = 0.5 } },

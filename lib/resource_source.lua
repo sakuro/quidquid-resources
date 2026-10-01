@@ -10,8 +10,8 @@ local SCAN_CHUNKS_PER_TICK = 8
 
 -- Every handler starts from here and returns early on nil. ensure_storage runs from
 -- on_init and on_configuration_changed, which together cover the mod being added, so
--- nil should be unreachable -- but an event firing against a half-initialised storage
--- would otherwise be a nil index deep inside the clustering code.
+-- nil should be unreachable. The check keeps an event firing against a half-initialised
+-- storage from becoming a nil index deep inside the clustering code.
 local function state()
   return storage.resources
 end
@@ -83,7 +83,7 @@ local function scan(surface_index, x, y)
   local key = ResourceClustering.chunk_key(x, y)
   local store = store_for(surface_index)
   -- A resource this chunk held before but the rescan no longer finds (depleted to
-  -- nothing, or removed) must be dropped, not just left stale -- see on_resource_depleted.
+  -- nothing, or removed) must be dropped instead of left stale; see on_resource_depleted.
   for resource_name in pairs(store.owner) do
     if grouped[resource_name] == nil then
       ResourceClustering.remove_chunk(store, resource_name, key)
@@ -129,12 +129,11 @@ function ResourceSource.on_tick()
     scanned = scanned + 1
   end
   if ScanQueue.is_empty(resources.queue) then
-    -- Announced once, when the batch ensure_storage queued is through. The queue drains
-    -- again and again in ordinary play -- every newly charted chunk and every exhausted
-    -- entity refills it -- so the flag, not an empty queue, is what marks the end of the
-    -- initial scan. This runs even when the queue was already empty going in, because a
-    -- brand new game can have nothing to scan at all, and staying silent there would be
-    -- the one case where adding the mod says nothing.
+    -- Announced once, when the batch ensure_storage queued is through. In ordinary play
+    -- every newly charted chunk and every exhausted entity refills the queue, so it
+    -- drains again and again; the flag marks the end of the initial scan instead. This
+    -- runs even when the queue was already empty going in, because a brand new game can
+    -- have nothing to scan, and adding the mod should still be announced there.
     if resources.initial_scan_pending then
       resources.initial_scan_pending = nil
       game.print({ "", { "mod-name.quidquid-resources" }, ": ", { "quidquid-resources.resource-scan-complete" } })
@@ -172,8 +171,8 @@ end
 
 --- Drops a surface's clusters whole.
 ---
---- Surface indices are reused, so a leftover store would be read as another surface's
---- -- the same hazard a source keying anything by surface_index has to guard against.
+--- Surface indices are reused, so a leftover store would be read as another surface's.
+--- Any source keying anything by surface_index has to guard against the same hazard.
 --- Registered for both on_surface_deleted and on_surface_cleared.
 ---@param event table  on_surface_deleted or on_surface_cleared
 function ResourceSource.on_surface_removed(event)
@@ -185,8 +184,8 @@ end
 
 --- Re-scans the chunk an exhausted resource entity sat in.
 ---
---- `entity.amount` at this point is what's left, not what disappeared -- zero for a
---- finite resource, the minimum yield for an infinite one -- so subtracting it would
+--- `entity.amount` at this point is what's left, not what disappeared (zero for a
+--- finite resource, the minimum yield for an infinite one), so subtracting it would
 --- leave the cached amount permanently wrong instead of correcting it. Re-enqueuing
 --- lets the background scan recompute the chunk's entry from what is actually still
 --- there, the same way on_built_entity handles a chunk gaining a resource.
@@ -205,7 +204,7 @@ end
 --- this the cache would never learn about either change. A destroyed entity raises
 --- neither on_resource_depleted (that only fires for exhaustion) nor on_chunk_charted
 --- (the chunk was already charted), so script_raised_destroy is the only signal the
---- cache gets -- confirmed against a live server that `event.entity` is still valid,
+--- cache gets. Confirmed against a live server that `event.entity` is still valid,
 --- with a readable position and surface_index, at the time this handler runs.
 --- Registered with a type filter so the handler is not called for ordinary building or
 --- destruction.
@@ -236,8 +235,8 @@ local function collect_resources()
   return resources
 end
 
--- Built fresh per search rather than cached: prototypes never change within a session,
--- but this is a handful of entries and the cache lookup would cost more than rebuilding.
+-- Built fresh per search: prototypes never change within a session, but this is a
+-- handful of entries and a cache lookup would cost more than rebuilding.
 local function collect_localised_names()
   local localised_names = {}
   for _, prototype in ipairs(collect_resources()) do
@@ -249,8 +248,8 @@ end
 -- The rich-text token for a resource candidate's surface: a planet icon when the
 -- surface has one (the same "[planet=...]" tag vanilla's own Space Age locale uses,
 -- rendered as rich text by lib/search_highlight.lua like the rest of this line), or
--- the plain surface name otherwise -- LuaSurface.planet is nil for a scripted surface
--- from another mod that has none.
+-- the plain surface name otherwise, since LuaSurface.planet is nil for a scripted
+-- surface from another mod.
 local function surface_token(surface)
   if surface.planet ~= nil then
     return "[planet=" .. surface.planet.name .. "]"
@@ -259,8 +258,8 @@ local function surface_token(surface)
 end
 
 -- Collects both the visible clusters and each of their surfaces' display tokens in
--- one pass, since this loop already has every relevant LuaSurface in hand -- a second
--- pass just to build the token map would walk the same surfaces again for nothing.
+-- one pass, since this loop already has every relevant LuaSurface in hand; a second
+-- pass would walk the same surfaces again.
 local function visible_clusters(player)
   local clusters = {}
   local surface_tokens = {}
@@ -289,20 +288,20 @@ end
 
 -- One find_entities_filtered per candidate, with limit = 1 so the engine stops at the
 -- first hit. Measured on a disposable headless server with 1400 mining drills present:
--- ~45us per call for a patch with no drill on it, the common case -- the engine must
--- scan the whole bbox and find nothing. `search` used to run this over every matching
--- patch, not just the DISPLAY_LIMIT PaletteLogic.merge_candidates keeps, which at a few
--- hundred matching patches roughly doubled a keystroke's cost; unlike items or
+-- ~45us per call for a patch with no drill on it, the common case, because the engine
+-- must scan the whole bbox and find nothing. Running it over every matching patch,
+-- instead of only the DISPLAY_LIMIT ones PaletteLogic.merge_candidates keeps, roughly
+-- doubled a keystroke's cost at a few hundred matching patches. Unlike items or
 -- technologies, typing more of a resource's name does not shrink the match count, since
 -- there are only a handful of resource prototypes but potentially hundreds of patches
--- each. `decorate` (below) now calls this only on the candidates about to be shown.
+-- each. So only `decorate` (below) calls this, on the candidates about to be shown.
 --
--- Every link of the chain -- the surface, this surface's store, this cluster -- is
--- guarded rather than indexed straight through: state() can be nil like every other
+-- Every link of the chain (the surface, this surface's store, this cluster) is
+-- guarded instead of indexed straight through: state() can be nil like every other
 -- entry point here, and a surface's store or a specific cluster can legitimately be
 -- gone by the time this runs (the background scan and the player both mutate it).
--- Any of those absences means "nothing to report", not a crash worth letting the
--- caller's pcall swallow for every candidate in the search.
+-- Any of those absences means "nothing to report"; a crash would only be swallowed
+-- by the caller's pcall, once for every candidate in the search.
 local function is_occupied(candidate)
   local surface = game.get_surface(candidate.surface_index)
   if surface == nil then
@@ -349,12 +348,12 @@ local function search(query, player_index)
 end
 
 -- Registered as this source's `decorate`, called by lib/palette.lua only on the
--- candidates that survived PaletteLogic.merge_candidates' trim -- see the comment above
--- is_occupied for why that bound is the point of this hook. Building the occupied form
--- needs only the candidate's own `label` and `occupied_marker`, both plain fields
--- build_candidates already sets on every candidate for exactly this reader, so nothing
--- needs deriving from scratch here. An unoccupied candidate gets no entry: nil tells
--- lib/palette_logic.lua's apply_decoration to leave it exactly as `search` produced it.
+-- candidates that survived PaletteLogic.merge_candidates' trim; the comment above
+-- is_occupied explains why this hook exists for that bound. Building the occupied form
+-- needs only the candidate's own `label` and `occupied_marker`, plain fields
+-- build_candidates sets on every candidate for this reader. An unoccupied candidate
+-- gets no entry: nil tells lib/palette_logic.lua's apply_decoration to leave it
+-- exactly as `search` produced it.
 local function decorate(candidates, _player_index)
   local decorations = {}
   for index, candidate in ipairs(candidates) do
@@ -368,28 +367,28 @@ end
 
 --- Registers the resource-name dictionary with flib, for translated-name search.
 ---
---- Must run from on_init/on_configuration_changed, before the first on_tick -- see
+--- Must run from on_init/on_configuration_changed, before the first on_tick; see
 --- control.lua and EXTENDING.md "Translated names". The occupied marker rides in the
 --- same dictionary, under OCCUPIED_MARKER_KEY, so `search` gets its translated form
---- from the same `flib_dictionary.get` call as every resource name, rather than
---- standing up a second dictionary for one entry.
+--- from the same `flib_dictionary.get` call as every resource name, without a second
+--- dictionary for one entry.
 ---
 --- The marker's value is base game's own `[gui]occupied` (`{ "gui.occupied", "" }`),
---- not a locale entry this mod maintains -- passing an empty `__1__` yields the fixed
+--- not a locale entry this mod maintains. Passing an empty `__1__` yields the fixed
 --- part on its own (`" (occupied)"`, leading space and all; ResourceLogic.occupied_label
 --- trims it). Verified by reading every shipped `core/locale/*/core.cfg`: of the 50
 --- locales the game ships, 32 define `gui.occupied` and 31 of those order it
---- `__1__ (...)`. So borrowing the key is a strict gain for 31 languages that get only
---- English from a two-language mod entry, neutral for the 18 that leave the key
+--- `__1__ (...)`. Borrowing the key is a gain for those 31 languages, which would get
+--- only English from a two-language mod entry, neutral for the 18 that leave the key
 --- undefined and fall back to English either way, and a word-order compromise for one.
---- It also removes the risk of hand-copied text drifting from the game's own wording.
---- The one exception is Hebrew (`he`), which orders it `(occupied) __1__` -- marker
---- first -- so extracting the fixed part and appending it reverses the intended order
---- there. Not an RTL problem: of the three RTL locales shipped, only Hebrew defines the
---- key at all, and its ordering is its translator's choice. Accepted rather than worked
---- around, because Hebrew already fell back to the English "(occupied)" under the old
---- mod-owned entry, so this is not a regression, and a placeholder's position cannot be
---- recovered from a string it has already been resolved out of.
+--- It also keeps the text from drifting from the game's own wording.
+--- The one exception is Hebrew (`he`), which puts the marker first,
+--- `(occupied) __1__`, so extracting the fixed part and appending it reverses the
+--- intended order there. This is the translator's choice, not an RTL issue: of the
+--- three RTL locales shipped, only Hebrew defines the key. It is accepted without a
+--- workaround because Hebrew already fell back to the English "(occupied)" under the
+--- old mod-owned entry, and a placeholder's position cannot be recovered from a string
+--- it has already been resolved out of.
 function ResourceSource.register_dictionary()
   flib_dictionary.new(NAMESPACE)
   for _, prototype in ipairs(collect_resources()) do

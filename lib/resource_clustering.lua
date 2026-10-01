@@ -16,7 +16,7 @@ end
 
 --- True when a resource's collision box is larger than one tile.
 ---
---- Such resources -- crude oil, sulfuric acid geysers, fluorine vents, lithium brine --
+--- Such resources (crude oil, sulfuric acid geysers, fluorine vents, lithium brine)
 --- are placed as scattered 3x3 entities that never touch each other, so testing
 --- whether they reach across a chunk seam would split every field into its wells.
 --- They merge on chunk adjacency alone instead, as Resource Monitor does. The
@@ -86,7 +86,7 @@ end
 --- One chunk's resource entities, summed per resource name.
 ---
 --- Reads only `.name`, `.amount` and `.position`, so a spec can hand it plain tables
---- where the runtime hands it a LuaEntity array -- no per-entity allocation on the
+--- where the runtime hands it a LuaEntity array, with no per-entity allocation on the
 --- scanning path.
 ---@param entities table  array of things answering .name, .amount and .position
 ---@return table  resource name -> { amount, tiles, left, top, right, bottom, anchor,
@@ -120,8 +120,8 @@ function ResourceClustering.group_chunk(entities)
 
   -- Second pass, once every entry's bounding box is final: pick, per resource, the
   -- entity closest to that box's centre as the anchor. The centre itself can fall on a
-  -- tile boundary (see lib.resource_logic) and is only ever used here to rank real
-  -- entity positions -- it is never returned as a position itself. A tie is broken by
+  -- tile boundary (see lib.resource_logic), so it is only used here to rank real
+  -- entity positions and is never returned as a position itself. A tie is broken by
   -- smaller x, then smaller y, so the result does not depend on entities' iteration
   -- order.
   local anchor_distance = {}
@@ -187,7 +187,7 @@ end
 --- Folds one chunk's worth of a resource into the store, merging with any neighbour.
 ---
 --- A neighbouring chunk is merged only where the resource touches across the seam, or
---- on adjacency alone when `loose` is set -- see is_loose. A chunk that bridges two
+--- on adjacency alone when `loose` is set (see is_loose). A chunk that bridges two
 --- clusters joins all of them into one. A chunk already in a cluster stays in it even
 --- if its rescanned tiles no longer reach that cluster's other chunks: clusters never
 --- split (issue #174 "On clusters that never split").
