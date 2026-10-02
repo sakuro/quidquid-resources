@@ -1,12 +1,10 @@
 name: Spec
 
 # Part of the optional test lane: a MOD without `.busted` does not have this file.
-# workflow_dispatch: see lint.yml.
 on:
   pull_request:
   push:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
   spec:
