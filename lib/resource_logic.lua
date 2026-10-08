@@ -30,9 +30,10 @@ end
 
 -- nil rather than a number for a patch on another surface: a straight line between two
 -- surfaces is not a distance anyone can walk, so the second line shows the coordinates
--- alone there. Floored to whole metres because whole metres is all the display ever
--- shows, and because an unfloored float would reach the formatter, which Lua's "%d"
--- rejects for a value with no integer representation.
+-- alone there. The floor is this function's half of a contract, not a guard: the
+-- `distance` parameter it feeds is documented as whole metres, so a float truncated
+-- later inside `suffixed` would make that documentation a lie. Nothing enforces it at
+-- runtime, Lua 5.2 truncating "%d" silently, which is why the spec asserts it instead.
 local function distance_to(player_location, surface_index, position)
   if player_location == nil or player_location.surface_index ~= surface_index then
     return nil

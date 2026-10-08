@@ -40,6 +40,10 @@ package.preload["__quidquid__.lib.api"] = function()
     -- the numeric amount, not the formatted amount string" below.
     number_format = {
       suffixed = function(value)
+        -- The real formatter takes a float; this mock insists on a whole number so a
+        -- caller that forgets to floor a measurement fails here. Lua 5.2's "%d"
+        -- truncates silently, so without this a missing math.floor is invisible.
+        assert(value % 1 == 0, "suffixed got a non-integer: " .. tostring(value))
         return ("<%d>"):format(value)
       end,
     },
@@ -124,6 +128,22 @@ describe("ResourceLogic", function()
       cluster("iron-ore:other", "iron-ore", 5000, { left = 0, top = 0, right = 10, bottom = 10 }, {
         ["0,0"] = { amount = 5000, left = 0, top = 0, right = 10, bottom = 10, anchor = { x = 3, y = 4 } },
       }, 2),
+    }
+
+    -- Map-scale coordinates: squaring these reaches 1.6e11, far past where a 32-bit
+    -- intermediate would wrap, so the arithmetic is pinned at the distances Factorio's
+    -- 2,000,000-tile map can actually produce.
+    local distant_clusters = {
+      cluster("iron-ore:distant", "iron-ore", 5000, { left = 300000, top = 400000, right = 300010, bottom = 400010 }, {
+        ["9375,12500"] = {
+          amount = 5000,
+          left = 300000,
+          top = 400000,
+          right = 300010,
+          bottom = 400010,
+          anchor = { x = 300000, y = 400000 },
+        },
+      }),
     }
 
     it("matches on the translated name", function()
@@ -382,7 +402,7 @@ describe("ResourceLogic", function()
     end)
 
     it("floors a fractional distance to whole metres", function()
-      local player_location = { surface_index = 1, position = { x = -4, y = -4 } }
+      local player_location = { surface_index = 1, position = { x = -3, y = -3 } }
       local candidates = ResourceLogic.build_candidates(
         "copper",
         clusters,
@@ -393,10 +413,10 @@ describe("ResourceLogic", function()
         player_location
       )
 
-      -- One tile diagonally from the copper-ore anchor, so sqrt(2). The formatter must
-      -- never see the float: the spec's suffixed mock formats with %d, and Lua 5.4
-      -- raises on a float with no integer representation.
-      assert.are.equal("[planet=nauvis] (-5, -5) <1>m", candidates[1].secondary_text)
+      -- Two tiles diagonally from the copper-ore anchor, so sqrt(8) = 2.828: floored it
+      -- is 2, rounded it would be 3. The suffixed mock rejects a non-integer, so this
+      -- also fails outright if the floor is dropped rather than quietly truncating.
+      assert.are.equal("[planet=nauvis] (-5, -5) <2>m", candidates[1].secondary_text)
     end)
 
     it("shows a zero distance for a patch the player is standing on", function()
@@ -444,6 +464,23 @@ describe("ResourceLogic", function()
       )
 
       assert.are.equal("[planet=nauvis] (-5, -5)", candidates[1].secondary_text)
+    end)
+
+    it("measures a distance at map scale without losing precision", function()
+      local player_location = { surface_index = 1, position = { x = 0, y = 0 } }
+      local candidates = ResourceLogic.build_candidates(
+        "iron",
+        distant_clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- The 3-4-5 triple scaled by 100000, so the result is exactly 500000 and any
+      -- precision loss shows up as an off-by-one.
+      assert.are.equal("[planet=nauvis] (300000, 400000) <500000>m", candidates[1].secondary_text)
     end)
   end)
 
