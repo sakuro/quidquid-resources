@@ -40,6 +40,10 @@ package.preload["__quidquid__.lib.api"] = function()
     -- the numeric amount, not the formatted amount string" below.
     number_format = {
       suffixed = function(value)
+        -- The real formatter takes a float; this mock insists on a whole number so a
+        -- caller that forgets to floor a measurement fails here. Lua 5.2's "%d"
+        -- truncates silently, so without this a missing math.floor is invisible.
+        assert(value % 1 == 0, "suffixed got a non-integer: " .. tostring(value))
         return ("<%d>"):format(value)
       end,
     },
@@ -48,10 +52,10 @@ end
 
 local ResourceLogic = require("lib.resource_logic")
 
-local function cluster(id, resource_name, amount, bounds, chunks)
+local function cluster(id, resource_name, amount, bounds, chunks, surface_index)
   return {
     id = id,
-    surface_index = 1,
+    surface_index = surface_index or 1,
     resource_name = resource_name,
     chunks = chunks or {},
     amount = amount,
@@ -73,13 +77,26 @@ describe("ResourceLogic", function()
       assert.are.equal("[planet=nauvis] (-137, -330)", text)
     end)
 
-    -- The occupied marker is on the name line (see .occupied_label below), so the
-    -- second line is always a plain string: no argument flips it into a
-    -- LocalisedString, and there is no font-wrapper form to lose the highlight for.
-    it("never includes the occupied marker, even a stray extra argument is ignored", function()
-      local text = ResourceLogic.secondary_text("[planet=nauvis]", { x = -137.5, y = -330.1 }, true)
+    it("appends the distance in metres when given one", function()
+      local text = ResourceLogic.secondary_text("[planet=nauvis]", { x = -137.5, y = -330.1 }, 1234)
+
+      -- "<1234>" is the spec's suffixed mock, deliberately unlike the real "1.2k".
+      assert.are.equal("[planet=nauvis] (-138, -331) <1234>m", text)
+    end)
+
+    it("leaves the line at the coordinates when the distance is nil", function()
+      local text = ResourceLogic.secondary_text("[planet=nauvis]", { x = -137.5, y = -330.1 }, nil)
 
       assert.are.equal("[planet=nauvis] (-138, -331)", text)
+    end)
+
+    -- The occupied marker is on the name line (see .occupied_label below), so the
+    -- second line is always a plain string, distance or no distance: no argument
+    -- flips it into a LocalisedString, and there is no font-wrapper form to lose the
+    -- highlight for.
+    it("returns a plain string with a distance and without", function()
+      assert.are.equal("string", type(ResourceLogic.secondary_text("[planet=nauvis]", { x = 0, y = 0 })))
+      assert.are.equal("string", type(ResourceLogic.secondary_text("[planet=nauvis]", { x = 0, y = 0 }, 500)))
     end)
   end)
 
@@ -103,6 +120,30 @@ describe("ResourceLogic", function()
     local localised_names = {
       ["iron-ore"] = { "entity-name.iron-ore" },
       ["copper-ore"] = { "entity-name.copper-ore" },
+    }
+
+    -- A patch on a second surface, for the cases where the player's character is not
+    -- standing on the patch's surface.
+    local other_surface_clusters = {
+      cluster("iron-ore:other", "iron-ore", 5000, { left = 0, top = 0, right = 10, bottom = 10 }, {
+        ["0,0"] = { amount = 5000, left = 0, top = 0, right = 10, bottom = 10, anchor = { x = 3, y = 4 } },
+      }, 2),
+    }
+
+    -- Map-scale coordinates: squaring these reaches 1.6e11, far past where a 32-bit
+    -- intermediate would wrap, so the arithmetic is pinned at the distances Factorio's
+    -- 2,000,000-tile map can actually produce.
+    local distant_clusters = {
+      cluster("iron-ore:distant", "iron-ore", 5000, { left = 300000, top = 400000, right = 300010, bottom = 400010 }, {
+        ["9375,12500"] = {
+          amount = 5000,
+          left = 300000,
+          top = 400000,
+          right = 300010,
+          bottom = 400010,
+          anchor = { x = 300000, y = 400000 },
+        },
+      }),
     }
 
     it("matches on the translated name", function()
@@ -341,6 +382,104 @@ describe("ResourceLogic", function()
       local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       assert.is_nil(candidates[1].occupied_marker)
+    end)
+
+    it("appends the distance from the player for a patch on the player's surface", function()
+      local player_location = { surface_index = 1, position = { x = -2, y = -1 } }
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- The copper-ore fixture's anchor is { x = -5, y = -5 }: 3 tiles west of the
+      -- player and 4 north, so exactly 5 away.
+      assert.are.equal("[planet=nauvis] (-5, -5) <5>m", candidates[1].secondary_text)
+    end)
+
+    it("floors a fractional distance to whole metres", function()
+      local player_location = { surface_index = 1, position = { x = -3, y = -3 } }
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- Two tiles diagonally from the copper-ore anchor, so sqrt(8) = 2.828: floored it
+      -- is 2, rounded it would be 3. The suffixed mock rejects a non-integer, so this
+      -- also fails outright if the floor is dropped rather than quietly truncating.
+      assert.are.equal("[planet=nauvis] (-5, -5) <2>m", candidates[1].secondary_text)
+    end)
+
+    it("shows a zero distance for a patch the player is standing on", function()
+      local player_location = { surface_index = 1, position = { x = -5, y = -5 } }
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- Zero is a distance, not the absence of one. Pinned down so a later
+      -- `distance == 0` special case cannot drop the figure for the patch underfoot.
+      assert.are.equal("[planet=nauvis] (-5, -5) <0>m", candidates[1].secondary_text)
+    end)
+
+    it("leaves out the distance for a patch on another surface", function()
+      local player_location = { surface_index = 1, position = { x = 0, y = 0 } }
+      local candidates = ResourceLogic.build_candidates(
+        "iron",
+        other_surface_clusters,
+        translated,
+        localised_names,
+        { [2] = "[planet=vulcanus]" },
+        nil,
+        player_location
+      )
+
+      assert.are.equal("[planet=vulcanus] (3, 4)", candidates[1].secondary_text)
+    end)
+
+    it("leaves out the distance when there is no player location", function()
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        nil
+      )
+
+      assert.are.equal("[planet=nauvis] (-5, -5)", candidates[1].secondary_text)
+    end)
+
+    it("measures a distance at map scale without losing precision", function()
+      local player_location = { surface_index = 1, position = { x = 0, y = 0 } }
+      local candidates = ResourceLogic.build_candidates(
+        "iron",
+        distant_clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- The 3-4-5 triple scaled by 100000, so the result is exactly 500000 and any
+      -- precision loss shows up as an off-by-one.
+      assert.are.equal("[planet=nauvis] (300000, 400000) <500000>m", candidates[1].secondary_text)
     end)
   end)
 

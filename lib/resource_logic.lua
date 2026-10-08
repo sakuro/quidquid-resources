@@ -28,6 +28,26 @@ local function richest_chunk_anchor(chunks)
   return best_entry.anchor
 end
 
+-- The point measured to is the caller's `position`, the richest-chunk anchor the second
+-- line already prints, so the distance and the coordinates agree. That follows from
+-- reusing the position already in hand rather than from weighing it against the patch's
+-- nearest edge; the game's own pin measures the latter, so a pin reads lower on the
+-- same patch.
+--
+-- nil rather than a number for a patch on another surface: a straight line between two
+-- surfaces is not a distance anyone can walk, so the second line shows the coordinates
+-- alone there. The floor is this function's half of a contract, not a guard: the
+-- `distance` parameter it feeds is documented as whole metres, so a float truncated
+-- later inside `suffixed` would make that documentation a lie.
+local function distance_to(player_location, surface_index, position)
+  if player_location == nil or player_location.surface_index ~= surface_index then
+    return nil
+  end
+  local dx = position.x - player_location.position.x
+  local dy = position.y - player_location.position.y
+  return math.floor(math.sqrt(dx * dx + dy * dy))
+end
+
 --- A patch's own second line: where it is, not what it's called.
 ---
 --- Every patch of one resource shares the same prototype name, so putting that name
@@ -41,11 +61,29 @@ end
 --- back in once it knows). The marker lives on the name line instead (see
 --- `.occupied_label`), matching where Factorio's own map search puts it, so this
 --- second line stays a plain string that only says where the patch is.
+---
+--- The distance's unit symbol is a hardcoded ASCII "m", not base game's
+--- `si-unit-meter-short`, even though 43 of the 50 shipped locales define that key.
+--- Borrowing it would pair a localised symbol with Quidquid's hardcoded ASCII tier
+--- suffix, so Russian would read "1.2kм", the unit in Cyrillic and the prefix in
+--- Latin. An SI unit symbol is language-independent by definition, so ASCII
+--- throughout agrees with the suffix and keeps this line a plain string, with no
+--- dictionary round-trip and no window during which the symbol is missing. One tile
+--- is one metre (https://wiki.factorio.com/Map_structure#Real_world_size_analogy),
+--- so `suffixed`'s k and M tiers read as the SI prefixes of the same name.
 ---@param surface_token string  the surface's display token, "[planet=x]" or a plain name
 ---@param position table  { x, y }, the candidate's own position
----@return string  the surface token and the floored coordinates
-function ResourceLogic.secondary_text(surface_token, position)
-  return ("%s (%d, %d)"):format(surface_token, math.floor(position.x), math.floor(position.y))
+---@param distance number|nil  whole metres from the player, already floored by the
+--- caller; nil for a patch the player cannot walk to, which leaves the line at the
+--- coordinates
+---@return string  the surface token, the floored coordinates and, given a distance,
+--- that distance in metres
+function ResourceLogic.secondary_text(surface_token, position, distance)
+  local text = ("%s (%d, %d)"):format(surface_token, math.floor(position.x), math.floor(position.y))
+  if distance == nil then
+    return text
+  end
+  return text .. " " .. api.number_format.suffixed(distance) .. "m"
 end
 
 --- Splices the occupied marker onto a candidate's name-line label.
@@ -113,6 +151,9 @@ end
 --- from flib's dictionary; carried onto every candidate as `occupied_marker` for
 --- lib/resource_source.lua's decorate to pass to `.occupied_label` once it
 --- learns, at search time, which candidates are actually occupied
+---@param player_location table|nil  { surface_index = uint, position = MapPosition },
+--- the player's physical controller's own pair, extracted by lib/resource_source.lua;
+--- nil leaves every candidate without a distance
 ---@return table  candidates, richest first; see EXTENDING.md "Candidates"
 function ResourceLogic.build_candidates(
   query,
@@ -120,7 +161,8 @@ function ResourceLogic.build_candidates(
   translated_names,
   localised_names,
   surface_tokens,
-  occupied_marker
+  occupied_marker,
+  player_location
 )
   local candidates = {}
   local matcher = api.matcher(query)
@@ -157,7 +199,11 @@ function ResourceLogic.build_candidates(
         icon = "entity/" .. cluster.resource_name,
         search_display_name = search_display_name,
         occupied_marker = occupied_marker,
-        secondary_text = ResourceLogic.secondary_text(surface_token, position),
+        secondary_text = ResourceLogic.secondary_text(
+          surface_token,
+          position,
+          distance_to(player_location, cluster.surface_index, position)
+        ),
         search_display_ranges = match.display_ranges,
         search_score = match.score,
       })

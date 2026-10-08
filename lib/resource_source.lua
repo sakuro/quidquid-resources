@@ -337,13 +337,21 @@ local function search(query, player_index)
   end
   local translated_names = flib_dictionary.get(player_index, NAMESPACE) or {}
   local clusters, surface_tokens = visible_clusters(player)
+  -- The physical controller's own position and surface, not LuaControl's: remote view
+  -- moves `player.position` and `player.surface_index` onto whatever the camera is
+  -- over, which would turn the figure into a distance from the camera. The physical
+  -- pair keeps it the distance the character would have to travel, at the cost of
+  -- showing no distance for the planet being viewed remotely. A player with no
+  -- character (editor, spectator) still has a physical controller with a position, so
+  -- neither field needs a nil guard.
   return ResourceLogic.build_candidates(
     query,
     clusters,
     translated_names,
     collect_localised_names(),
     surface_tokens,
-    translated_names[OCCUPIED_MARKER_KEY]
+    translated_names[OCCUPIED_MARKER_KEY],
+    { surface_index = player.physical_surface_index, position = player.physical_position }
   )
 end
 

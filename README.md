@@ -25,6 +25,13 @@ A patch that already has a mining drill working it is marked on the same line, r
 
 Each result's name is followed by its remaining amount, read from a cache. A chunk is re-scanned when one of its entities is exhausted, so a finite patch's figure drops in steps as it is mined and lags behind the drills. Infinite resources such as crude oil and sulfuric acid geysers raise that event at most once, as they decay toward their minimum yield, so an oil field's figure can stay at its chart-time value indefinitely.
 
+The muted line under the name carries the patch's surface and the coordinates a left click lands on.
+A patch on the surface the character is standing on carries its distance from that character as well, in metres, one metre to the tile.
+The distance is to those coordinates, not to the nearest ore, so it disagrees with the distance a pin shows for the same patch.
+A pin reads zero while the character stands on the ore, because the pin measures against the whole patch.
+Remote view does not move the measurement, so it stays the straight-line distance from the character.
+A patch on any other surface shows the coordinates alone.
+
 Pinning a patch uses the game's own map-pin system. The pin holds the patch's entities and recomputes the amount continuously, so the list is for choosing a patch and the pin is for watching one. Pins are per player and are dismissed from Factorio's own UI, not from Quidquid.
 
 ## For other mods
