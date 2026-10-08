@@ -1,4 +1,8 @@
 ---------------------------------------------------------------------------------------------------
+Version: Unreleased
+  Features:
+    - A resource patch on the character's own surface shows its distance from the character
+---------------------------------------------------------------------------------------------------
 Version: 0.6.0
 Date: 2026-09-29
   Changes:
