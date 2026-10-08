@@ -1,7 +1,7 @@
 ---------------------------------------------------------------------------------------------------
 Version: Unreleased
-  Features:
-    - A resource patch on the character's own surface shows its distance from the character
+  Minor Features:
+    - Resource search results show the distance to a patch on your character's own surface
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.0
 Date: 2026-09-29
