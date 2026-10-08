@@ -27,6 +27,8 @@ Each result's name is followed by its remaining amount, read from a cache. A chu
 
 The muted line under the name carries the patch's surface and the coordinates a left click lands on.
 A patch on the surface the character is standing on carries its distance from that character as well, in metres, one metre to the tile.
+The distance is to those coordinates, not to the nearest ore, so it disagrees with the distance a pin shows for the same patch.
+A pin reads zero while the character stands on the ore, because the pin measures against the whole patch.
 Remote view does not move the measurement, so it stays the straight-line distance from the character.
 A patch on any other surface shows the coordinates alone.
 

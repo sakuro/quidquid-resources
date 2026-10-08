@@ -28,6 +28,12 @@ local function richest_chunk_anchor(chunks)
   return best_entry.anchor
 end
 
+-- The point measured to is the caller's `position`, the richest-chunk anchor the second
+-- line already prints, so the distance and the coordinates agree. That follows from
+-- reusing the position already in hand rather than from weighing it against the patch's
+-- nearest edge; the game's own pin measures the latter, so a pin reads lower on the
+-- same patch.
+--
 -- nil rather than a number for a patch on another surface: a straight line between two
 -- surfaces is not a distance anyone can walk, so the second line shows the coordinates
 -- alone there. The floor is this function's half of a contract, not a guard: the
