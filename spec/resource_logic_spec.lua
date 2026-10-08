@@ -48,10 +48,10 @@ end
 
 local ResourceLogic = require("lib.resource_logic")
 
-local function cluster(id, resource_name, amount, bounds, chunks)
+local function cluster(id, resource_name, amount, bounds, chunks, surface_index)
   return {
     id = id,
-    surface_index = 1,
+    surface_index = surface_index or 1,
     resource_name = resource_name,
     chunks = chunks or {},
     amount = amount,
@@ -116,6 +116,14 @@ describe("ResourceLogic", function()
     local localised_names = {
       ["iron-ore"] = { "entity-name.iron-ore" },
       ["copper-ore"] = { "entity-name.copper-ore" },
+    }
+
+    -- A patch on a second surface, for the cases where the player's character is not
+    -- standing on the patch's surface.
+    local other_surface_clusters = {
+      cluster("iron-ore:other", "iron-ore", 5000, { left = 0, top = 0, right = 10, bottom = 10 }, {
+        ["0,0"] = { amount = 5000, left = 0, top = 0, right = 10, bottom = 10, anchor = { x = 3, y = 4 } },
+      }, 2),
     }
 
     it("matches on the translated name", function()
@@ -354,6 +362,88 @@ describe("ResourceLogic", function()
       local candidates = ResourceLogic.build_candidates("copper", clusters, translated, localised_names)
 
       assert.is_nil(candidates[1].occupied_marker)
+    end)
+
+    it("appends the distance from the player for a patch on the player's surface", function()
+      local player_location = { surface_index = 1, position = { x = -2, y = -1 } }
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- The copper-ore fixture's anchor is { x = -5, y = -5 }: 3 tiles west of the
+      -- player and 4 north, so exactly 5 away.
+      assert.are.equal("[planet=nauvis] (-5, -5) <5>m", candidates[1].secondary_text)
+    end)
+
+    it("floors a fractional distance to whole metres", function()
+      local player_location = { surface_index = 1, position = { x = -4, y = -4 } }
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- One tile diagonally from the copper-ore anchor, so sqrt(2). The formatter must
+      -- never see the float: the spec's suffixed mock formats with %d, and Lua 5.4
+      -- raises on a float with no integer representation.
+      assert.are.equal("[planet=nauvis] (-5, -5) <1>m", candidates[1].secondary_text)
+    end)
+
+    it("shows a zero distance for a patch the player is standing on", function()
+      local player_location = { surface_index = 1, position = { x = -5, y = -5 } }
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        player_location
+      )
+
+      -- Zero is a distance, not the absence of one, and `secondary_text` tells them
+      -- apart by `distance == nil` rather than by truthiness. Pinned down here so a
+      -- later truthy check cannot quietly drop the figure for the patch underfoot.
+      assert.are.equal("[planet=nauvis] (-5, -5) <0>m", candidates[1].secondary_text)
+    end)
+
+    it("leaves out the distance for a patch on another surface", function()
+      local player_location = { surface_index = 1, position = { x = 0, y = 0 } }
+      local candidates = ResourceLogic.build_candidates(
+        "iron",
+        other_surface_clusters,
+        translated,
+        localised_names,
+        { [2] = "[planet=vulcanus]" },
+        nil,
+        player_location
+      )
+
+      assert.are.equal("[planet=vulcanus] (3, 4)", candidates[1].secondary_text)
+    end)
+
+    it("leaves out the distance when there is no player location", function()
+      local candidates = ResourceLogic.build_candidates(
+        "copper",
+        clusters,
+        translated,
+        localised_names,
+        { [1] = "[planet=nauvis]" },
+        nil,
+        nil
+      )
+
+      assert.are.equal("[planet=nauvis] (-5, -5)", candidates[1].secondary_text)
     end)
   end)
 

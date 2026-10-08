@@ -28,6 +28,20 @@ local function richest_chunk_anchor(chunks)
   return best_entry.anchor
 end
 
+-- nil rather than a number for a patch on another surface: a straight line between two
+-- surfaces is not a distance anyone can walk, so the second line shows the coordinates
+-- alone there. Floored to whole metres because whole metres is all the display ever
+-- shows, and because an unfloored float would reach the formatter, which Lua's "%d"
+-- rejects for a value with no integer representation.
+local function distance_to(player_location, surface_index, position)
+  if player_location == nil or player_location.surface_index ~= surface_index then
+    return nil
+  end
+  local dx = position.x - player_location.position.x
+  local dy = position.y - player_location.position.y
+  return math.floor(math.sqrt(dx * dx + dy * dy))
+end
+
 --- A patch's own second line: where it is, not what it's called.
 ---
 --- Every patch of one resource shares the same prototype name, so putting that name
@@ -131,6 +145,9 @@ end
 --- from flib's dictionary; carried onto every candidate as `occupied_marker` for
 --- lib/resource_source.lua's decorate to pass to `.occupied_label` once it
 --- learns, at search time, which candidates are actually occupied
+---@param player_location table|nil  { surface_index = uint, position = MapPosition },
+--- the player's physical controller's own pair, extracted by lib/resource_source.lua;
+--- nil leaves every candidate without a distance
 ---@return table  candidates, richest first; see EXTENDING.md "Candidates"
 function ResourceLogic.build_candidates(
   query,
@@ -138,7 +155,8 @@ function ResourceLogic.build_candidates(
   translated_names,
   localised_names,
   surface_tokens,
-  occupied_marker
+  occupied_marker,
+  player_location
 )
   local candidates = {}
   local matcher = api.matcher(query)
@@ -175,7 +193,11 @@ function ResourceLogic.build_candidates(
         icon = "entity/" .. cluster.resource_name,
         search_display_name = search_display_name,
         occupied_marker = occupied_marker,
-        secondary_text = ResourceLogic.secondary_text(surface_token, position),
+        secondary_text = ResourceLogic.secondary_text(
+          surface_token,
+          position,
+          distance_to(player_location, cluster.surface_index, position)
+        ),
         search_display_ranges = match.display_ranges,
         search_score = match.score,
       })
