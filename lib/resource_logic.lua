@@ -32,8 +32,7 @@ end
 -- surfaces is not a distance anyone can walk, so the second line shows the coordinates
 -- alone there. The floor is this function's half of a contract, not a guard: the
 -- `distance` parameter it feeds is documented as whole metres, so a float truncated
--- later inside `suffixed` would make that documentation a lie. Nothing enforces it at
--- runtime, Lua 5.2 truncating "%d" silently, which is why the spec asserts it instead.
+-- later inside `suffixed` would make that documentation a lie.
 local function distance_to(player_location, surface_index, position)
   if player_location == nil or player_location.surface_index ~= surface_index then
     return nil

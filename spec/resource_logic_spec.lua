@@ -431,9 +431,8 @@ describe("ResourceLogic", function()
         player_location
       )
 
-      -- Zero is a distance, not the absence of one, and `secondary_text` tells them
-      -- apart by `distance == nil` rather than by truthiness. Pinned down here so a
-      -- later truthy check cannot quietly drop the figure for the patch underfoot.
+      -- Zero is a distance, not the absence of one. Pinned down so a later
+      -- `distance == 0` special case cannot drop the figure for the patch underfoot.
       assert.are.equal("[planet=nauvis] (-5, -5) <0>m", candidates[1].secondary_text)
     end)
 
