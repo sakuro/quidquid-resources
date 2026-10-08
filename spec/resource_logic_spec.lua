@@ -73,13 +73,26 @@ describe("ResourceLogic", function()
       assert.are.equal("[planet=nauvis] (-137, -330)", text)
     end)
 
-    -- The occupied marker is on the name line (see .occupied_label below), so the
-    -- second line is always a plain string: no argument flips it into a
-    -- LocalisedString, and there is no font-wrapper form to lose the highlight for.
-    it("never includes the occupied marker, even a stray extra argument is ignored", function()
-      local text = ResourceLogic.secondary_text("[planet=nauvis]", { x = -137.5, y = -330.1 }, true)
+    it("appends the distance in metres when given one", function()
+      local text = ResourceLogic.secondary_text("[planet=nauvis]", { x = -137.5, y = -330.1 }, 1234)
+
+      -- "<1234>" is the spec's suffixed mock, deliberately unlike the real "1.2k".
+      assert.are.equal("[planet=nauvis] (-138, -331) <1234>m", text)
+    end)
+
+    it("leaves the line at the coordinates when the distance is nil", function()
+      local text = ResourceLogic.secondary_text("[planet=nauvis]", { x = -137.5, y = -330.1 }, nil)
 
       assert.are.equal("[planet=nauvis] (-138, -331)", text)
+    end)
+
+    -- The occupied marker is on the name line (see .occupied_label below), so the
+    -- second line is always a plain string, distance or no distance: no argument
+    -- flips it into a LocalisedString, and there is no font-wrapper form to lose the
+    -- highlight for.
+    it("returns a plain string with a distance and without", function()
+      assert.are.equal("string", type(ResourceLogic.secondary_text("[planet=nauvis]", { x = 0, y = 0 })))
+      assert.are.equal("string", type(ResourceLogic.secondary_text("[planet=nauvis]", { x = 0, y = 0 }, 500)))
     end)
   end)
 

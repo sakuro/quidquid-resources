@@ -41,11 +41,29 @@ end
 --- back in once it knows). The marker lives on the name line instead (see
 --- `.occupied_label`), matching where Factorio's own map search puts it, so this
 --- second line stays a plain string that only says where the patch is.
+---
+--- The distance's unit symbol is a hardcoded ASCII "m", not base game's
+--- `si-unit-meter-short`, even though 43 of the 50 shipped locales define that key.
+--- Borrowing it would pair a localised symbol with Quidquid's hardcoded ASCII tier
+--- suffix, so Russian would read "1.2kм", the unit in Cyrillic and the prefix in
+--- Latin. An SI unit symbol is language-independent by definition, so ASCII
+--- throughout agrees with the suffix and keeps this line a plain string, with no
+--- dictionary round-trip and no window during which the symbol is missing. One tile
+--- is one metre (https://wiki.factorio.com/Map_structure#Real_world_size_analogy),
+--- so `suffixed`'s k and M tiers read as the SI prefixes of the same name.
 ---@param surface_token string  the surface's display token, "[planet=x]" or a plain name
 ---@param position table  { x, y }, the candidate's own position
----@return string  the surface token and the floored coordinates
-function ResourceLogic.secondary_text(surface_token, position)
-  return ("%s (%d, %d)"):format(surface_token, math.floor(position.x), math.floor(position.y))
+---@param distance number|nil  whole metres from the player, already floored by the
+--- caller; nil for a patch the player cannot walk to, which leaves the line at the
+--- coordinates
+---@return string  the surface token, the floored coordinates and, given a distance,
+--- that distance in metres
+function ResourceLogic.secondary_text(surface_token, position, distance)
+  local text = ("%s (%d, %d)"):format(surface_token, math.floor(position.x), math.floor(position.y))
+  if distance == nil then
+    return text
+  end
+  return text .. " " .. api.number_format.suffixed(distance) .. "m"
 end
 
 --- Splices the occupied marker onto a candidate's name-line label.
