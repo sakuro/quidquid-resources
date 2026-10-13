@@ -14,34 +14,18 @@ Search for resource patches your force has charted.
 | `Ctrl/Cmd` + left click | Pin the patch |
 | `Alt` + left click | Open in Factoriopedia |
 
-A patch is every chunk holding a resource whose tiles touch the same resource's tiles in a neighbouring chunk, diagonals included. Resources larger than one tile (crude oil, sulfuric acid geysers, fluorine vents, lithium brine) are scattered by nature, so for them sharing a chunk border is enough. Two patches whose edges fall in the same chunk still read as one.
-Once found, a patch never splits: mining out or deleting the chunks in the middle leaves the rest as a single patch.
+A patch is listed once any one of its chunks is charted, with its full extent and total amount.
 
-A patch is listed once any one of its chunks is charted, checked per force at search time. It then reports its full extent and total amount, including any part still under fog of war. Space platforms are skipped, since they hold no resources.
+When the mod is added to an existing save, a background scan fills in the list over the following minutes. Until then, an empty or partial result does not mean the resource isn't there. A chat message is posted when the scan finishes.
 
-When the mod is added to an existing save, a background scan works through the world a few chunks per tick, so the list fills in over the following minutes. Until then, an empty or partial result does not mean the resource isn't there. Quidquid: Resources posts a chat message when the scan finishes.
+A patch that already has a mining drill working it is marked on the same line, right after its name and amount.
 
-A patch that already has a mining drill working it is marked on the same line, right after its name and amount. A drill of any force counts, as in Factorio's own map search.
+The remaining amount is updated as resource entities are exhausted, so it lags behind the drills. For infinite resources such as crude oil, it can stay at the value from when the patch was charted.
 
-Each result's name is followed by its remaining amount, read from a cache. A chunk is re-scanned when one of its entities is exhausted, so a finite patch's figure drops in steps as it is mined and lags behind the drills. Infinite resources such as crude oil and sulfuric acid geysers raise that event at most once, as they decay toward their minimum yield, so an oil field's figure can stay at its chart-time value indefinitely.
+The muted line under the name carries the patch's surface and the coordinates a left click lands on, plus the distance from the character when the patch is on the same surface.
 
-The muted line under the name carries the patch's surface and the coordinates a left click lands on.
-A patch on the surface the character is standing on carries its distance from that character as well, in metres, one metre to the tile.
-The distance is to those coordinates, not to the nearest ore, so it disagrees with the distance a pin shows for the same patch.
-A pin reads zero while the character stands on the ore, because the pin measures against the whole patch.
-Remote view does not move the measurement, so it stays the straight-line distance from the character.
-A patch on any other surface shows the coordinates alone.
-
-Pinning a patch uses the game's own map-pin system. The pin holds the patch's entities and recomputes the amount continuously, so the list is for choosing a patch and the pin is for watching one. Pins are per player and are dismissed from Factorio's own UI, not from Quidquid.
+Pinning a patch uses the game's own map-pin system, which keeps the amount up to date, so the list is for choosing a patch and the pin is for watching one.
 
 ## For other mods
 
-A resource candidate (`type = "resource"`) carries, besides Quidquid's standard candidate fields:
-
-| Field | Meaning |
-| --- | --- |
-| `resource_name` | The resource entity prototype's name |
-| `surface_index` | The surface the patch is on |
-| `position` | A MapPosition inside the patch's richest chunk |
-
-Other fields are internal and may change.
+See [EXTENDING.md](https://github.com/sakuro/quidquid-resources/blob/main/EXTENDING.md) for the fields a resource candidate carries.
