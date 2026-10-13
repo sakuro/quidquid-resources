@@ -88,6 +88,10 @@ end
 --- Reads only `.name`, `.amount` and `.position`, so a spec can hand it plain tables
 --- where the runtime hands it a LuaEntity array, with no per-entity allocation on the
 --- scanning path.
+---
+--- A chunk holds at most one entry per resource, so two patches whose edges fall in
+--- the same chunk end up as one cluster. Splitting them would need per-tile tracking,
+--- which chunk granularity deliberately trades away.
 ---@param entities table  array of things answering .name, .amount and .position
 ---@return table  resource name -> { amount, tiles, left, top, right, bottom, anchor,
 ---  edges }; edges holds a 32-bit tile mask per side, keyed top, bottom, left, right

@@ -189,6 +189,9 @@ end
 --- leave the cached amount permanently wrong instead of correcting it. Re-enqueuing
 --- lets the background scan recompute the chunk's entry from what is actually still
 --- there, the same way on_built_entity handles a chunk gaining a resource.
+---
+--- An infinite resource raises this at most once, when it decays to its minimum
+--- yield, so its cached amount can stay at the chart-time value indefinitely.
 ---@param event table  on_resource_depleted
 function ResourceSource.on_resource_depleted(event)
   local entity = event.entity
@@ -273,6 +276,8 @@ local function visible_clusters(player)
     if surface ~= nil and surface.platform == nil then
       surface_tokens[surface_index] = surface_token(surface)
       for _, cluster in ipairs(ResourceClustering.all(store)) do
+        -- One charted chunk lists the whole cluster, fog included: the player has seen
+        -- the patch, and its extent and total are already known from the scan.
         for key in pairs(cluster.chunks) do
           local x, y = key:match("^(-?%d+),(-?%d+)$")
           if force.is_chunk_charted(surface, { x = tonumber(x), y = tonumber(y) }) then
@@ -319,6 +324,7 @@ local function is_occupied(candidate)
   if cluster == nil then
     return false
   end
+  -- No force filter: a drill of any force marks the patch, as in Factorio's own map search.
   local drills = surface.find_entities_filtered({
     area = {
       left_top = { cluster.bounds.left, cluster.bounds.top },
