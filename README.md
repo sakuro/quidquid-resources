@@ -16,9 +16,11 @@ Search for resource patches your force has charted.
 
 A patch is listed once any one of its chunks is charted, with its full extent and total amount.
 
-When the mod is added to an existing save, a background scan fills in the list over the following minutes, and a chat message is posted when it finishes.
+When the mod is added to an existing save, a background scan fills in the list over the following minutes. Until then, an empty or partial result does not mean the resource isn't there. A chat message is posted when the scan finishes.
 
 A patch that already has a mining drill working it is marked on the same line, right after its name and amount.
+
+The remaining amount is updated as resource entities are exhausted, so it lags behind the drills. For infinite resources such as crude oil, it can stay at the value from when the patch was charted.
 
 The muted line under the name carries the patch's surface and the coordinates a left click lands on, plus the distance from the character when the patch is on the same surface.
 
