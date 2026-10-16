@@ -2,10 +2,10 @@
 gh = "2.102.0"
 gitleaks = "8.30"
 jq = "1.8.2"
-hk = "2.5.0"
+hk = "2.6.0"
 actionlint = "1.7.12"
 shellcheck = "0.11.0"
-stylua = "2.5.2"
+stylua = "2.6.0"
 lua = "5.2" # Factorio's Lua version; never bump (see .github/renovate.json)
 "github:sakuro/factorix" = "0.24.0"
 
