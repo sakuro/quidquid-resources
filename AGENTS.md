@@ -47,6 +47,10 @@ Cover pure logic only: code that does not touch the Factorio runtime (`game`, `s
 
 `spec/helper.lua` runs once before any spec loads. Put setup there that must precede the first `require` of the code under test (e.g. Factorio global stubs). Keep it idempotent.
 
+## Locale
+
+For a non-English locale, take item, entity, and term names from the game's own locale for that language instead of translating them yourself. They live in `data/<mod>/locale/<lang>/` of the Factorio installation, where `<mod>` is `base`, `core`, or one of the expansion mods (`space-age`, `quality`, `elevated-rails`, `recycler`); look in the one that defines the thing.
+
 ## Release
 
 Releases are handled by GitHub Actions workflows. Do not run `mise run release:*` tasks manually.
