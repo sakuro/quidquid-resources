@@ -1,6 +1,6 @@
 name: Spec
 
-# Part of the optional test lane: a MOD without `.busted` does not have this file.
+# Part of the optional test lane: a mod without `.busted` does not have this file.
 on:
   pull_request:
   push:

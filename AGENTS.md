@@ -1,6 +1,6 @@
 # Project
 
-Factorio MOD.
+Factorio mod.
 
 # Development
 
@@ -14,7 +14,7 @@ Run `mise tasks ls -l` to list tasks defined in this project. The `-l` (`--local
 
 ## Build and Install
 
-- `mise run install` - Install to local Factorio MOD directory. Uses `git archive` internally, so only committed files are included; commit changes before running.
+- `mise run install` - Install to local Factorio mod directory. Uses `git archive` internally, so only committed files are included; commit changes before running.
 
 ## Temporary files
 
@@ -80,5 +80,5 @@ Do not create a section for the next release version directly; version bumping i
 - [Factorio Wiki](https://wiki.factorio.com/)
 - [factorio-data](https://github.com/wube/factorio-data): the base game's data definitions; clone locally if needed
 - Game directories (mod dir, user dir, data dir, etc.): `factorix path --json | jq -r .<field>` (e.g. `.mod_dir`)
-- Other MODs: to investigate a MOD's contents, download it with `factorix mod download <mod-name> -d tmp` rather than guessing; if its source is on GitHub or Codeberg, refer to that as well
+- Other mods: to investigate a mod's contents, download it with `factorix mod download <mod-name> -d tmp` rather than guessing; if its source is on GitHub or Codeberg, refer to that as well
 - Game terminology: use the wording in the locale files under the data directory (`<data_dir>/<base|space-age|...>/locale/<lang>/*.cfg`) so that terms match the game
