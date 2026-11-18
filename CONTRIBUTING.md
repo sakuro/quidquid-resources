@@ -15,6 +15,7 @@ Then `mise run format` formats Lua code, `mise run lint` runs `luacheck`, `mise 
 
 - Re-run `mise install` after pulling changes to `mise.toml`; Renovate bumps tool versions regularly.
 - Building Lua from source needs the readline development headers (`libreadline-dev` on Debian/Ubuntu, `readline` via Homebrew on macOS).
+- Workflows reference actions by full tag (`uses: actions/checkout@v7.0.1`); `.github/workflows/actions.lock` pins each to a commit, including transitive actions. After changing any `uses:`, run `gh actions-lock` and commit the lockfile; the [`gh-actions-lock`](https://github.com/github/gh-actions-lock) extension is installed by `mise run install-gh-actions-lock`. The `verify-lockfile` job in `lint.yml` fails when it is out of sync. Renovate regenerates it on action updates.
 - `mise run build` needs `unzip` (preinstalled on macOS and most Linux distributions): it reads the commit ID stored in the existing archive to decide whether to rebuild it.
 
 ## Pull requests
